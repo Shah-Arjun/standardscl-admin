@@ -1,124 +1,113 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
+import { useEffect, useState } from "react";
+import { getAllTeachers } from "./actions/teacher";
+import { teachersTable } from "@/lib/db/schema";
+import { InferSelectModel } from "drizzle-orm";
+import { Users, UserCheck, Bell, Image as ImageIcon } from "lucide-react";
 
-
-interface Teacher {
-  id: number
-  teacherName: string
-  experience?: number
-  status?: string
-}
-
-
+type Teacher = InferSelectModel<typeof teachersTable>;
 
 export default function TeacherStats() {
-  const [teachers, setTeachers] = useState<Teacher[]>([])
-  const [notices, setNotices] = useState<any[]>([])
-  const [gallery, setGallery] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await fetch("/api/teachers")
-        const data = await res.json()
-        setTeachers(data || [])
-      } catch (err) {
-        console.error(err)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchData()
-  }, [])
-
-
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [notices, setNotices] = useState<any[]>([]);
+  const [gallery, setGallery] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchAll = async () => {
       try {
-        const res = await fetch("/api/notices")
-        const data = await res.json()
-        setNotices(data || [])
+        const [tRes, nRes, gRes] = await Promise.all([
+          getAllTeachers(),
+          fetch("/api/notices").then((r) => r.json()),
+          fetch("/api/gallery").then((r) => r.json()),
+        ]);
+
+        setTeachers(tRes.teachers || []);
+        setNotices(nRes || []);
+        setGallery(gRes.data || []);
       } catch (err) {
-        console.error(err)
+        console.error(err);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
-    fetchData()
-  }, [])
+    };
 
+    fetchAll();
+  }, []);
 
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await fetch("/api/gallery")
-        const data = await res.json()
-        setGallery(data.data || [])
-        // console.log(data.data)      //debug
-      } catch (err) {
-        console.error(err)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchData()
-  }, [])
-
-
-
-
+  const stats = [
+    {
+      title: "Total Teachers",
+      value: teachers.length,
+      icon: Users,
+      color: "bg-blue-50 text-blue-600",
+    },
+    {
+      title: "Active Teachers",
+      value: teachers.length,
+      icon: UserCheck,
+      color: "bg-green-50 text-green-600",
+    },
+    {
+      title: "Notices",
+      value: notices.length,
+      icon: Bell,
+      color: "bg-pink-50 text-pink-600",
+    },
+    {
+      title: "Gallery",
+      value: gallery.length,
+      icon: ImageIcon,
+      color: "bg-purple-50 text-purple-600",
+    },
+  ];
 
   if (loading) {
-    return <p className="text-gray-500">Loading stats...</p>
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {Array(4)
+          .fill(0)
+          .map((_, i) => (
+            <div
+              key={i}
+              className="h-24 rounded-xl bg-gray-100 animate-pulse"
+            />
+          ))}
+      </div>
+    );
   }
 
-  const totalTeachers = teachers.length
-
-  const activeTeachers = teachers.filter(
-    (t) => t.status === "Active" || !t.status
-  ).length
-
-
-
-
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {stats.map((item, i) => {
+        const Icon = item.icon;
 
-      {/* Total Teachers */}
-      <div className="bg-white p-4 rounded-xl shadow border">
-        <h2 className="text-mm text-gray-500">Total Teachers</h2>
-        <p className="text-2xl font-bold">{totalTeachers}</p>
-      </div>
+        return (
+          <div
+            key={i}
+            className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm hover:shadow-md transition"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">{item.title}</p>
+                <h2 className="text-2xl font-semibold text-gray-900 mt-1">
+                  {item.value}
+                </h2>
+              </div>
 
-      {/* Active Teachers */}
-      <div className="bg-green-50 p-4 rounded-xl shadow border">
-        <h2 className="text-md text-green-600">Active Teachers</h2>
-        <p className="text-2xl font-bold text-green-700">{activeTeachers}</p>
-      </div>
+              <div
+                className={`p-2.5 rounded-lg ${item.color}`}
+              >
+                <Icon className="w-5 h-5" />
+              </div>
+            </div>
 
-      {/* Notices */}
-      <div className="bg-pink-100 p-4 rounded-xl shadow border">
-        <h2 className="text-md text-green-600">Notices</h2>
-        <p className="text-2xl font-bold text-green-700">{notices.length}</p>
-      </div>
-
-      {/* Images */}
-      <div className="bg-blue-50 p-4 rounded-xl shadow border">
-        <h2 className="text-md text-green-600">Gallery Images</h2>
-        <p className="text-2xl font-bold text-green-700">{gallery.length}</p>
-      </div>
-
-      {/* Average Experience */}
-      {/* <div className="bg-amber-50 p-4 rounded-xl shadow border italic">
-        Comming soon
-      </div> */}
-
+            {/* soft underline */}
+            <div className="mt-4 h-1 w-12 bg-gray-100 rounded-full" />
+          </div>
+        );
+      })}
     </div>
-  )
+  );
 }
