@@ -22,7 +22,6 @@ export default function TeacherStats() {
           fetch("/api/notices").then((r) => r.json()),
           fetch("/api/gallery").then((r) => r.json()),
         ]);
-
         setTeachers(tRes.teachers || []);
         setNotices(nRes || []);
         setGallery(gRes.data || []);
@@ -41,25 +40,25 @@ export default function TeacherStats() {
       title: "Total Teachers",
       value: teachers.length,
       icon: Users,
-      color: "bg-blue-50 text-blue-600",
+      color: "bg-blue-100 text-blue-600",
     },
     {
       title: "Active Teachers",
       value: teachers.length,
       icon: UserCheck,
-      color: "bg-green-50 text-green-600",
+      color: "bg-emerald-100 text-emerald-600",
     },
     {
       title: "Notices",
       value: notices.length,
       icon: Bell,
-      color: "bg-pink-50 text-pink-600",
+      color: "bg-pink-100 text-pink-600",
     },
     {
       title: "Gallery",
       value: gallery.length,
       icon: ImageIcon,
-      color: "bg-purple-50 text-purple-600",
+      color: "bg-purple-100 text-purple-600",
     },
   ];
 
@@ -71,7 +70,7 @@ export default function TeacherStats() {
           .map((_, i) => (
             <div
               key={i}
-              className="h-24 rounded-xl bg-gray-100 animate-pulse"
+              className="h-24 rounded-2xl bg-gray-100 animate-pulse"
             />
           ))}
       </div>
@@ -80,15 +79,19 @@ export default function TeacherStats() {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
       {stats.map((item, i) => {
         const Icon = item.icon;
 
         return (
           <div
             key={i}
-            className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm hover:shadow-md transition"
+            className="group bg-white border border-gray-100 rounded-2xl p-5 shadow-sm
+            hover:shadow-lg hover:-translate-y-1 transition-all duration-200"
           >
             <div className="flex items-center justify-between">
+
+              {/* Text */}
               <div>
                 <p className="text-sm text-gray-500">{item.title}</p>
                 <h2 className="text-2xl font-semibold text-gray-900 mt-1">
@@ -96,18 +99,21 @@ export default function TeacherStats() {
                 </h2>
               </div>
 
+              {/* Icon */}
               <div
-                className={`p-2.5 rounded-lg ${item.color}`}
+                className={`p-3 rounded-xl ${item.color}
+                group-hover:scale-110 transition-transform`}
               >
                 <Icon className="w-5 h-5" />
               </div>
             </div>
 
             {/* soft underline */}
-            <div className="mt-4 h-1 w-12 bg-gray-100 rounded-full" />
+            <div className="mt-4 h-1 w-10 bg-gray-100 rounded-full" />
           </div>
         );
       })}
+
     </div>
   );
 }
