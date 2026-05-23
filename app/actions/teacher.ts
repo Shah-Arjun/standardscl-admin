@@ -1,10 +1,10 @@
-// app/actions/teacher.actions.ts
-
 "use server";
 
+import { uploadToCloudinary } from "@/lib/cloudinary";
 import { db } from "@/lib/db/index";
 import { teachersTable } from "@/lib/db/schema";
 import { asc, eq, InferSelectModel } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 
 type Teacher = InferSelectModel<typeof teachersTable>;
 
@@ -110,6 +110,100 @@ export async function updateTeacher(id: number, teacher: Teacher) {
         return { success: false, error: "Failed to update teacher" };
     }
 }
+
+
+
+// ─── createTeacher ────────────────────────────────────────────────────────────
+interface AddTeacherPayload {
+  teacherName: string;
+  gender?: "male" | "female" | "other" | null;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  employmentType: string;
+  qualifications?: string[] | null;
+  subjectsTeaches?: string[] | null;
+  post?: string[] | null;
+  experience?: number | null;
+  image?: File | null;
+}
+
+export async function addTeacher(data: AddTeacherPayload) {
+  try {
+// console.log("--from server action-- ",data)
+
+    if (!data.teacherName?.trim()) {
+      return {
+        success: false,
+        message: "Teacher name is required",
+      };
+    }
+
+    let photo = null as string | null;
+    let photoPublicId = null as string | null;
+
+    // Upload image if provided
+    if (data.image) {
+      // Check image type
+      if (!data.image.type.startsWith("image/")) {
+        return {
+          success: false,
+          message: "Please upload a valid image",
+        };
+      }
+
+      const buffer = Buffer.from(
+        await data.image.arrayBuffer()
+      );
+
+      const uploadResult = await uploadToCloudinary(
+        buffer,
+        "teachers"
+      );
+
+      photo = uploadResult.secure_url;
+      photoPublicId = uploadResult.public_id;
+    }
+
+    // Save teacher
+    const insertedTeacher = await db
+      .insert(teachersTable)
+      .values({
+        teacherName: data.teacherName.trim(),
+        gender: data.gender ?? null,
+        email: data.email || null,
+        phone: data.phone || null,
+        address: data.address || null,
+        employmentType: data.employmentType,
+        qualifications: data.qualifications ?? null,
+        subjectsTeaches: data.subjectsTeaches ?? null,
+        post: data.post ?? null,
+        experience: data.experience ?? null,
+        photo,
+        photoPublicId,
+      })
+      .returning();
+
+    // Refresh pages
+    revalidatePath("/admin/teachers");
+    revalidatePath("/teachers");
+
+    return {
+      success: true,
+      message: "Teacher added successfully",
+      teacher: insertedTeacher[0],
+    };
+  } catch (error) {
+    console.error("[ADD_TEACHER_ACTION_ERROR]", error);
+    return {
+      success: false,
+      message:
+        "Failed to add teacher. Please try again.",
+    };
+  }
+}
+
+
 
 
 
