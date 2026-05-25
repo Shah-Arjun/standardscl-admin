@@ -42,7 +42,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
 
             {/* Sidebar - Desktop */}
-            <aside className="hidden md:block">
+            <aside className="hidden md:block w-68 shrink-0">
                 <AdminSidebar />
             </aside>
 

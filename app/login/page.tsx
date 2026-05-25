@@ -47,9 +47,8 @@ export default function LoginPage() {
     <>
       <div className="flex min-h-screen flex-col items-center justify-center px-6 py-12 bg-gray-900">
         <div className="w-full max-w-sm mb-40">
-          <h2 className="text-center text-2xl font-bold text-white mb-6">
-            Admin Login
-          </h2>
+          <h2 className="text-center text-3xl font-bold text-white mb-6">SSBS Admin Dashboard</h2>
+          <h2 className="text-center text-xl text-gray-400 mb-6">Admin Login</h2>
 
           <form
             onSubmit={(e) => {

@@ -84,10 +84,12 @@ export async function createGalleryImage(data: {
     }
 
     // Check file type
-    if (!image.type.startsWith("image/")) {
+    const isImage = image.type.startsWith("image/");
+    const isVideo = image.type.startsWith("video/");
+    if (!isImage && !isVideo) {
       return {
         success: false,
-        message: "Please upload a valid image file",
+        message: "Please upload a valid image or video file",
         data: null,
       };
     }
@@ -170,10 +172,12 @@ export async function updateGalleryImage(
 
     // If new image provided, upload and destroy old
     if (image) {
-      if (!image.type.startsWith("image/")) {
+      const isImage = image.type.startsWith("image/");
+      const isVideo = image.type.startsWith("video/");
+      if (!isImage && !isVideo) {
         return {
           success: false,
-          message: "Please upload a valid image file",
+          message: "Please upload a valid image or video file",
           data: null,
         };
       }
