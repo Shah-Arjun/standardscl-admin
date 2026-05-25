@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { getAllTeachers } from "./actions/teacher";
+import { getAllNotices } from "@/app/actions/notice";
+import { getGalleryImages } from "@/app/actions/gallery";
 import { teachersTable } from "@/lib/db/schema";
 import { InferSelectModel } from "drizzle-orm";
 import { Users, UserCheck, Bell, Image as ImageIcon } from "lucide-react";
@@ -19,11 +21,11 @@ export default function TeacherStats() {
       try {
         const [tRes, nRes, gRes] = await Promise.all([
           getAllTeachers(),
-          fetch("/api/notices").then((r) => r.json()),
-          fetch("/api/gallery").then((r) => r.json()),
+          getAllNotices(),
+          getGalleryImages(),
         ]);
         setTeachers(tRes.teachers || []);
-        setNotices(nRes || []);
+        setNotices(nRes.data || []);
         setGallery(gRes.data || []);
       } catch (err) {
         console.error(err);
@@ -34,6 +36,9 @@ export default function TeacherStats() {
 
     fetchAll();
   }, []);
+
+
+
 
   const stats = [
     {

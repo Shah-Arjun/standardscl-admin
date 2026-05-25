@@ -45,4 +45,19 @@ export const uploadToCloudinary = async (
 
 
 
-export default cloudinary
+// delete from cloudinary function
+export const deleteFromCloudinary = async (
+  publicId: string
+): Promise<any> => {
+  return new Promise((resolve, reject) => {
+    cloudinary.uploader.destroy(publicId, (error, result) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(result);
+      }
+    });
+  });
+};
+
+export default cloudinary;

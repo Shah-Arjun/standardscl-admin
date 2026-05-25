@@ -56,8 +56,6 @@ export const userTable = pgTable("users", {
 
 
 // notice schema
-import { boolean, integer } from "drizzle-orm/pg-core";
-import { url } from "inspector";
 
 export const noticeCategoryEnum = pgEnum("notice_category", [
   "Admissions",

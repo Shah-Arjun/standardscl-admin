@@ -66,7 +66,6 @@ export async function getTeacherById(id: string | number) {
             error: null,
             teacher: teacher[0],
         };
-
     } catch (error) {
         console.log("Get teacher by id error:", error);
 
