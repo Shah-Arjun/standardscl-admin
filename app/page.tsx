@@ -122,7 +122,7 @@ export default function Dashboard() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-8 md:p-12 text-white relative overflow-hidden shadow-xl"
+        className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-6 md:p-8 text-white relative overflow-hidden shadow-xl"
       >
         <div className="absolute inset-0 bg-[radial-gradient(at_top_right,#4f46e510_0%,transparent_50%)]" />
         
@@ -130,21 +130,21 @@ export default function Dashboard() {
           <div className="space-y-4">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full backdrop-blur-md">
               <Film className="w-5 h-5" />
-              <span className="text-sm font-medium tracking-widest uppercase">Website Content Management</span>
+              <span className="text-xs font-semibold tracking-widest uppercase">Website Content Management</span>
             </div>
             
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tighter">
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tighter">
               Welcome Back, <span className="bg-gradient-to-r from-indigo-300 to-white bg-clip-text text-transparent">Admin</span>
             </h1>
             
-            <p className="text-slate-300 text-lg max-w-md">
+            <p className="text-slate-300 max-w-xl text-sm sm:text-base">
               Keep up with the latest announcements and school activities
             </p>
           </div>
 
           <button 
             onClick={scrollToQuickActions}
-            className="flex items-center gap-3 bg-white text-slate-900 px-6 py-3.5 rounded-2xl font-semibold hover:bg-white/90 active:scale-95 transition-all shadow-lg group"
+            className="flex items-center gap-3 bg-white text-slate-900 px-5 py-3 rounded-2xl font-semibold hover:bg-white/90 active:scale-95 transition-all shadow-lg group"
           >
             <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
             Add New Content

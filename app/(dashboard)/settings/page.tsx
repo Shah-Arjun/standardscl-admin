@@ -15,6 +15,7 @@ export default function AdminProfilePage() {
   const [saving, setSaving] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
+  const [initialEmail, setInitialEmail] = useState("");
 
   const [form, setForm] = useState({
     email: "",
@@ -30,6 +31,7 @@ export default function AdminProfilePage() {
         const profile = await getAdminProfile();
         if (profile) {
           setForm(prev => ({ ...prev, email: profile.email }));
+          setInitialEmail(profile.email);
         }
       } catch (error) {
         toast.error("Failed to load profile details");
@@ -48,37 +50,74 @@ export default function AdminProfilePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!form.email.trim()) {
-      toast.error("Email cannot be empty");
+    const emailInput = form.email.trim();
+    if (!emailInput) {
+      toast.error("Email address cannot be empty.");
       return;
     }
 
+    const isEmailChanged = emailInput.toLowerCase() !== initialEmail.toLowerCase();
+    const isPasswordChanged = !!form.newPassword;
+
+    if (!isEmailChanged && !isPasswordChanged) {
+      toast.info("No changes were made to your profile credentials.");
+      return;
+    }
+
+    if ((isEmailChanged || isPasswordChanged) && !form.currentPassword) {
+      toast.error("Your current password is required to authorize changes.");
+      return;
+    }
+
+    let toastId;
     try {
       setSaving(true);
-      const loadingToastId = toast.loading("Saving changes to secure servers...");
+      toastId = toast.loading("Updating your secure profile credentials...");
 
       const result = await updateAdminProfile({
-        email: form.email,
+        email: emailInput,
         currentPassword: form.currentPassword || undefined,
         newPassword: form.newPassword || undefined,
       });
 
-      toast.dismiss(loadingToastId);
-
       if (result.success) {
-        toast.success("Profile credentials updated successfully");
+        // Construct a descriptive, user-friendly success toast
+        let successMessage = "Profile updated successfully!";
+        if (isEmailChanged && isPasswordChanged) {
+          successMessage = `Email changed to ${emailInput} & password updated! Syncing session...`;
+        } else if (isEmailChanged) {
+          successMessage = `Email successfully changed to ${emailInput}! Syncing session...`;
+        } else if (isPasswordChanged) {
+          successMessage = "Password successfully updated!";
+        }
+
+        toast.success(successMessage, { id: toastId });
         
-        // Clear password fields after success
+        // Update initial email state
+        setInitialEmail(emailInput);
+
+        // Clear password inputs after success
         setForm(prev => ({
           ...prev,
           currentPassword: "",
           newPassword: "",
         }));
+
+        // Refresh the page if email changed to synchronize session across the layout (e.g. Sidebar)
+        if (isEmailChanged) {
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
+        }
       } else {
-        toast.error(result.error || "Failed to update profile");
+        toast.error(result.error || "Failed to update profile", { id: toastId });
       }
     } catch (error) {
-      toast.error("An unexpected error occurred. Please try again.");
+      if (toastId) {
+        toast.error("An unexpected error occurred. Please try again.", { id: toastId });
+      } else {
+        toast.error("An unexpected error occurred. Please try again.");
+      }
     } finally {
       setSaving(false);
     }
@@ -95,8 +134,6 @@ export default function AdminProfilePage() {
 
   return (
     <div className="max-w-xl mx-auto p-4 md:p-6 space-y-8">
-
-
       {/* Main Settings Card */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -139,7 +176,7 @@ export default function AdminProfilePage() {
               </div>
 
               {/* Divider */}
-              {/* <div className="relative py-2">
+              <div className="relative py-2">
                 <div className="absolute inset-0 flex items-center" aria-hidden="true">
                   <div className="w-full border-t border-slate-100" />
                 </div>
@@ -148,10 +185,10 @@ export default function AdminProfilePage() {
                     Security Verification
                   </span>
                 </div>
-              </div> */}
+              </div>
 
               {/* Current Password Input */}
-              {/* <div className="space-y-2">
+              <div className="space-y-2">
                 <div className="flex justify-between items-center">
                   <Label htmlFor="currentPassword" className="text-xs font-semibold text-slate-700">
                     Current Password
@@ -180,10 +217,10 @@ export default function AdminProfilePage() {
                     {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
-              </div> */}
+              </div>
 
               {/* New Password Input */}
-              {/* <div className="space-y-2">
+              <div className="space-y-2">
                 <div className="flex justify-between items-center">
                   <Label htmlFor="newPassword" className="text-xs font-semibold text-slate-700">
                     New Password
@@ -214,10 +251,10 @@ export default function AdminProfilePage() {
                 <p className="text-[10px] text-slate-400 mt-1 font-medium pl-1">
                   Must be at least 6 characters if you wish to change it.
                 </p>
-              </div> */}
+              </div>
 
               {/* Submit Button */}
-              {/* <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} className="pt-2">
+              <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} className="pt-2">
                 <Button
                   type="submit"
                   disabled={saving}
@@ -232,7 +269,7 @@ export default function AdminProfilePage() {
                     "Save Credentials"
                   )}
                 </Button>
-              </motion.div> */}
+              </motion.div>
             </form>
           </CardContent>
         </Card>

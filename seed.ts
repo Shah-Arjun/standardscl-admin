@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm"
 
 async function seed() {
   try {
-    const email = process.env.ADMIN_EMAIL
+    const email = process.env.ADMIN_EMAIL 
   const password = process.env.ADMIN_PASSWORD
 
   if (!email || !password) {

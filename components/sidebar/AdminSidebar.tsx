@@ -19,6 +19,7 @@ const navItems = [
   { href: "/teachers", label: "Teachers", icon: Users },
   { href: "/notices", label: "Notices", icon: Bell },
   { href: "/gallery", label: "Gallery", icon: ImageIcon },
+  { href: "/settings", label: "Settings", icon: Settings },   // Added here too (recommended)
 ];
 
 export default function AdminSidebar({ onClose }: { onClose?: () => void }) {
@@ -43,6 +44,11 @@ export default function AdminSidebar({ onClose }: { onClose?: () => void }) {
   const handleLogout = async () => {
     await fetch("/api/logout", { method: "POST" });
     window.location.href = "/login";
+  };
+
+  const handleNavigate = (href: string) => {
+    router.push(href);
+    onClose?.(); // Close sidebar on mobile when navigating
   };
 
   return (
@@ -83,7 +89,7 @@ export default function AdminSidebar({ onClose }: { onClose?: () => void }) {
             <Link
               key={item.href}
               href={item.href}
-              onClick={onClose}
+              onClick={onClose}   // This already closes on mobile
               className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${isActive
                 ? "bg-amber-600 text-white"
                 : "text-gray-300 hover:bg-gray-800"
@@ -99,8 +105,9 @@ export default function AdminSidebar({ onClose }: { onClose?: () => void }) {
       {/* User Section */}
       {user && (
         <div className="mt-auto border-t border-gray-800 p-4 space-y-3">
+          {/* Settings - Now properly closes sidebar on mobile */}
           <div 
-            onClick={() => router.push("/settings")}
+            onClick={() => handleNavigate("/settings")}
             className="w-full flex items-center gap-3 hover:bg-gray-800 transition p-3 rounded-xl cursor-pointer group"
           >
             {/* Avatar */}
