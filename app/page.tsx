@@ -5,7 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { 
   Users, UserCheck, Bell, Image as ImageIcon, 
-  Film, Plus, TrendingUp 
+  Film, Plus 
 } from "lucide-react";
 
 import { getAllTeachers } from "./actions/teacher";

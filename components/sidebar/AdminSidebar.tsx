@@ -3,7 +3,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Users, Bell, ImageIcon, X, LogOut } from "lucide-react";
+import { 
+  LayoutDashboard, Users, Bell, ImageIcon, 
+  X, LogOut, Settings 
+} from "lucide-react";
 import { useEffect, useState } from "react";
 
 type User = {
@@ -14,16 +17,14 @@ type User = {
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/teachers", label: "Teachers", icon: Users },
-  { href: "/notices", label: "Notice", icon: Bell },
+  { href: "/notices", label: "Notices", icon: Bell },
   { href: "/gallery", label: "Gallery", icon: ImageIcon },
 ];
 
 export default function AdminSidebar({ onClose }: { onClose?: () => void }) {
   const [user, setUser] = useState<User | null>(null);
-  const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -60,7 +61,6 @@ export default function AdminSidebar({ onClose }: { onClose?: () => void }) {
           <span className="font-semibold text-white">SSBS Admin</span>
         </div>
 
-        {/* Close button (mobile only) */}
         {onClose && (
           <button
             onClick={onClose}
@@ -83,11 +83,11 @@ export default function AdminSidebar({ onClose }: { onClose?: () => void }) {
             <Link
               key={item.href}
               href={item.href}
-              onClick={onClose} // auto close on mobile
+              onClick={onClose}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${isActive
                 ? "bg-amber-600 text-white"
                 : "text-gray-300 hover:bg-gray-800"
-                }`}
+              }`}
             >
               <item.icon className="h-5 w-5" />
               {item.label}
@@ -99,29 +99,30 @@ export default function AdminSidebar({ onClose }: { onClose?: () => void }) {
       {/* User Section */}
       {user && (
         <div className="mt-auto border-t border-gray-800 p-4 space-y-3">
-          {/* User Info */}
-            <button
-              onClick={() => router.push("/profile")}
-              className="w-full flex items-center gap-3 hover:bg-gray-900 transition p-3 rounded-lg"
-            >
-              {/* Avatar */}
-              <div className="w-10 h-10 rounded-full bg-amber-600 text-white flex items-center justify-center font-bold uppercase">
-                {user.email?.charAt(0)?.toUpperCase() || "U"}
-              </div>
+          <div 
+            onClick={() => router.push("/settings")}
+            className="w-full flex items-center gap-3 hover:bg-gray-800 transition p-3 rounded-xl cursor-pointer group"
+          >
+            {/* Avatar */}
+            <div className="w-10 h-10 rounded-full bg-amber-600 text-white flex items-center justify-center font-bold uppercase">
+              {user.email?.charAt(0)?.toUpperCase() || "U"}
+            </div>
 
-              {/* Info */}
-              <div className="min-w-0 text-left">
-                <p className="text-sm font-medium text-white truncate">
-                  {user.email}
-                </p>
-                <p className="text-xs text-gray-400">{user.role}</p>
-              </div>
-            </button>
+            {/* Info */}
+            <div className="min-w-0 text-left flex-1">
+              <p className="text-sm font-medium text-white truncate">
+                {user.email}
+              </p>
+              <p className="text-xs text-gray-400">{user.role}</p>
+            </div>
+
+            <Settings className="h-5 w-5 text-gray-400 group-hover:text-white transition-colors" />
+          </div>
 
           {/* Logout Button */}
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-red-400 bg-gray-800 hover:bg-gray-700 rounded-lg transition"
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-red-400 bg-gray-800 hover:bg-gray-700 rounded-xl transition"
           >
             <LogOut className="h-5 w-5" />
             Logout
