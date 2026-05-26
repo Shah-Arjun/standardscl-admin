@@ -1,5 +1,3 @@
-// app/actions/auth.actions.ts
-
 "use server";
 
 import { cookies } from "next/headers";
@@ -61,4 +59,39 @@ export async function checkAuth() {
             user: null,
         };
     }
+}
+
+
+
+// get admin profile data
+export async function getAdminProfile(email: string) {
+  try {
+    const user = await db.select().from(userTable).where(eq(userTable.email, email)).limit(1);
+    return user[0];
+  } catch (error) {
+    console.error("Error fetching admin profile:", error);
+    throw new Error("Failed to fetch admin profile");
+  }
+}
+
+
+// update admin profile
+export async function updateAdminProfile(data: { email: string; password?: string;}) {
+  try {
+    const { email, password } = data
+    await db.update(userTable)
+      .set({ password: password })
+      .where(eq(userTable.email, email));
+
+    return {
+      success: true,
+      message: "Profile updated",
+    };
+  } catch (err) {
+    console.error("Error updating admin profile:", err);
+    return {
+      success: false,
+      error: "Failed to update profile",
+    };
+  }
 }

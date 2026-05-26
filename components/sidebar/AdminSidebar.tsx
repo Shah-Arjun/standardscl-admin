@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, Users, Bell, ImageIcon, X, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -22,6 +22,8 @@ export default function AdminSidebar({ onClose }: { onClose?: () => void }) {
   const [user, setUser] = useState<User | null>(null);
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -98,18 +100,23 @@ export default function AdminSidebar({ onClose }: { onClose?: () => void }) {
       {user && (
         <div className="mt-auto border-t border-gray-800 p-4 space-y-3">
           {/* User Info */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-amber-600 text-white flex items-center justify-center font-bold uppercase">
-              {user.email?.charAt(0).toUpperCase()}
-            </div>
+            <button
+              onClick={() => router.push("/profile")}
+              className="w-full flex items-center gap-3 hover:bg-gray-900 transition p-3 rounded-lg"
+            >
+              {/* Avatar */}
+              <div className="w-10 h-10 rounded-full bg-amber-600 text-white flex items-center justify-center font-bold uppercase">
+                {user.email?.charAt(0)?.toUpperCase() || "U"}
+              </div>
 
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-white truncate">
-                {user.email}
-              </p>
-              <p className="text-xs text-gray-400">{user.role}</p>
-            </div>
-          </div>
+              {/* Info */}
+              <div className="min-w-0 text-left">
+                <p className="text-sm font-medium text-white truncate">
+                  {user.email}
+                </p>
+                <p className="text-xs text-gray-400">{user.role}</p>
+              </div>
+            </button>
 
           {/* Logout Button */}
           <button
