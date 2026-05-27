@@ -8,6 +8,7 @@ import {
   deleteGalleryImage 
 } from "@/app/actions/gallery";
 import { GalleryImage } from "@/lib/types/gallery";
+import { uploadFileToCloudinary } from "@/lib/upload";
 import { 
   Search, 
   Plus, 
@@ -148,9 +149,21 @@ export default function GalleryPage() {
         setNotification({ type: "error", message: "Only image and video files are allowed." });
         return;
       }
+
+      if (isImg && file.size > 15 * 1024 * 1024) {
+        setNotification({ type: "error", message: "Image files must be less than 15 MB." });
+        return;
+      }
+
+      if (isVid && file.size > 50 * 1024 * 1024) {
+        setNotification({ type: "error", message: "Video files must be less than 50 MB." });
+        return;
+      }
+
       setFormFile(file);
       const previewUrl = URL.createObjectURL(file);
       setFormFilePreview(previewUrl);
+      setNotification(null);
     }
   };
 
@@ -199,10 +212,14 @@ export default function GalleryPage() {
       setActionLoading(true);
       setNotification(null);
 
+      // Direct client-side signed upload to Cloudinary
+      const uploadRes = await uploadFileToCloudinary(formFile, "ssbs_gallery");
+
       const res = await createGalleryImage({
         title: formTitle.trim(),
         category: formCategory,
-        image: formFile,
+        url: uploadRes.secure_url,
+        photoPublicId: uploadRes.public_id,
       });
 
       if (!res.success || !res.data) {
@@ -235,10 +252,21 @@ export default function GalleryPage() {
       setActionLoading(true);
       setNotification(null);
 
+      let url = undefined;
+      let photoPublicId = undefined;
+
+      if (formFile) {
+        // Direct client-side signed upload to Cloudinary
+        const uploadRes = await uploadFileToCloudinary(formFile, "ssbs_gallery");
+        url = uploadRes.secure_url;
+        photoPublicId = uploadRes.public_id;
+      }
+
       const res = await updateGalleryImage(editImage.id, {
         title: formTitle.trim(),
         category: formCategory,
-        image: formFile, // optional
+        url,
+        photoPublicId,
       });
 
       if (!res.success || !res.data) {
@@ -644,7 +672,7 @@ export default function GalleryPage() {
                       
                       <div>
                         <p className="text-xs font-bold text-slate-700">Click to Upload Image or Video</p>
-                        <p className="text-[10px] text-slate-400 mt-0.5">Supports PNG, JPG, JPEG, WEBP, MP4, WEBM, MOV up to 10MB.</p>
+                        <p className="text-[10px] text-slate-400 mt-0.5">Supports Images up to 15MB, Videos up to 50MB.</p>
                       </div>
                     </div>
                   )}

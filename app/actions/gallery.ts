@@ -1,12 +1,13 @@
 "use server";
 
-import { uploadToCloudinary, deleteFromCloudinary } from "@/lib/cloudinary";
+import { deleteFromCloudinary } from "@/lib/cloudinary";
 import { db } from "@/lib/db/index";
 import { imageTable } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { GalleryImage } from "@/lib/types/gallery";
 
+// GET ALL GALLERY IMAGES/VIDEOS
 export async function getGalleryImages() {
   try {
     const data = await db
@@ -28,6 +29,7 @@ export async function getGalleryImages() {
   }
 }
 
+// GET GALLERY IMAGE/VIDEO BY ID
 export async function getGalleryImageById(id: number) {
   try {
     const imageId = Number(id);
@@ -67,43 +69,32 @@ export async function getGalleryImageById(id: number) {
   }
 }
 
+// CREATE GALLERY IMAGE/VIDEO (URL and public ID already uploaded from client)
 export async function createGalleryImage(data: {
   title: string;
   category: GalleryImage["category"];
-  image: File;
+  url: string;
+  photoPublicId: string;
 }) {
   try {
-    const { title, category, image } = data;
+    const { title, category, url, photoPublicId } = data;
 
-    if (!title || !category || !image) {
+    if (!title || !category || !url || !photoPublicId) {
       return {
         success: false,
-        message: "All fields are required, including the image file",
+        message: "All fields are required, including the published media url and ID",
         data: null,
       };
     }
 
-    // Check file type
-    const isImage = image.type.startsWith("image/");
-    const isVideo = image.type.startsWith("video/");
-    if (!isImage && !isVideo) {
-      return {
-        success: false,
-        message: "Please upload a valid image or video file",
-        data: null,
-      };
-    }
-
-    const buffer = Buffer.from(await image.arrayBuffer());
-    const uploadResult = await uploadToCloudinary(buffer, "gallery");
-
+    // Insert record directly
     const newImage = await db
       .insert(imageTable)
       .values({
         title: title.trim(),
         category,
-        url: uploadResult.secure_url,
-        photoPublicId: uploadResult.public_id,
+        url,
+        photoPublicId,
       })
       .returning();
 
@@ -112,7 +103,7 @@ export async function createGalleryImage(data: {
 
     return {
       success: true,
-      message: "Image added to gallery successfully",
+      message: "Media added to gallery successfully",
       data: newImage[0] as GalleryImage,
     };
   } catch (error: any) {
@@ -125,12 +116,14 @@ export async function createGalleryImage(data: {
   }
 }
 
+// UPDATE GALLERY IMAGE/VIDEO (with old media garbage collection on Cloudinary)
 export async function updateGalleryImage(
   id: number,
   data: {
     title: string;
     category: GalleryImage["category"];
-    image?: File | null;
+    url?: string;
+    photoPublicId?: string;
   }
 ) {
   try {
@@ -143,7 +136,7 @@ export async function updateGalleryImage(
       };
     }
 
-    const { title, category, image } = data;
+    const { title, category, url, photoPublicId } = data;
     if (!title || !category) {
       return {
         success: false,
@@ -162,38 +155,25 @@ export async function updateGalleryImage(
     if (existing.length === 0) {
       return {
         success: false,
-        message: "Gallery image not found",
+        message: "Gallery item not found",
         data: null,
       };
     }
 
-    let url = existing[0].url;
-    let photoPublicId = existing[0].photoPublicId;
+    let finalUrl = existing[0].url;
+    let finalPhotoPublicId = existing[0].photoPublicId;
 
-    // If new image provided, upload and destroy old
-    if (image) {
-      const isImage = image.type.startsWith("image/");
-      const isVideo = image.type.startsWith("video/");
-      if (!isImage && !isVideo) {
-        return {
-          success: false,
-          message: "Please upload a valid image or video file",
-          data: null,
-        };
-      }
-
-      const buffer = Buffer.from(await image.arrayBuffer());
-      const uploadResult = await uploadToCloudinary(buffer, "gallery");
-
+    // If new media was uploaded, swap and clean up the old one
+    if (photoPublicId && url) {
       // Delete old from Cloudinary
       try {
         await deleteFromCloudinary(existing[0].photoPublicId);
       } catch (err) {
-        console.error("Failed to delete old image from Cloudinary:", err);
+        console.error("Failed to delete old gallery item from Cloudinary:", err);
       }
 
-      url = uploadResult.secure_url;
-      photoPublicId = uploadResult.public_id;
+      finalUrl = url;
+      finalPhotoPublicId = photoPublicId;
     }
 
     const updated = await db
@@ -201,8 +181,8 @@ export async function updateGalleryImage(
       .set({
         title: title.trim(),
         category,
-        url,
-        photoPublicId,
+        url: finalUrl,
+        photoPublicId: finalPhotoPublicId,
       })
       .where(eq(imageTable.id, imageId))
       .returning();
@@ -212,19 +192,20 @@ export async function updateGalleryImage(
 
     return {
       success: true,
-      message: "Gallery image updated successfully",
+      message: "Gallery item updated successfully",
       data: updated[0] as GalleryImage,
     };
   } catch (error: any) {
     console.error("updateGalleryImage error:", error);
     return {
       success: false,
-      message: error.message || "Failed to update gallery image",
+      message: error.message || "Failed to update gallery item",
       data: null,
     };
   }
 }
 
+// DELETE GALLERY IMAGE/VIDEO
 export async function deleteGalleryImage(id: number) {
   try {
     const imageId = Number(id);
@@ -235,7 +216,7 @@ export async function deleteGalleryImage(id: number) {
       };
     }
 
-    // Fetch details to get Cloudinary public ID
+    // Fetch details to get Cloudinary public ID for deletion
     const result = await db
       .select()
       .from(imageTable)
@@ -245,7 +226,7 @@ export async function deleteGalleryImage(id: number) {
     if (result.length === 0) {
       return {
         success: false,
-        message: "Gallery image not found",
+        message: "Gallery item not found",
       };
     }
 
@@ -264,13 +245,13 @@ export async function deleteGalleryImage(id: number) {
 
     return {
       success: true,
-      message: "Image deleted from gallery successfully",
+      message: "Media deleted from gallery successfully",
     };
   } catch (error: any) {
     console.error("deleteGalleryImage error:", error);
     return {
       success: false,
-      message: error.message || "Failed to delete gallery image",
+      message: error.message || "Failed to delete gallery item",
     };
   }
 }

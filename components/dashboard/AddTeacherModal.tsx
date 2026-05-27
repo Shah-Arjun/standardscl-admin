@@ -20,6 +20,7 @@ import Image from "next/image";
 import { InferSelectModel } from "drizzle-orm";
 import { teachersTable } from "@/lib/db/schema";
 import { addTeacher } from "@/app/actions/teacher";
+import { uploadFileToCloudinary } from "@/lib/upload";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Teacher = InferSelectModel<typeof teachersTable>;
@@ -241,8 +242,8 @@ export function AddTeacherModal({ isOpen, onClose, onSuccess }: AddTeacherModalP
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      setErrors((prev) => ({ ...prev, photo: "Image must be less than 5 MB" }));
+    if (file.size > 15 * 1024 * 1024) {
+      setErrors((prev) => ({ ...prev, photo: "Image must be less than 15 MB" }));
       return;
     }
 
@@ -283,7 +284,16 @@ const handleSubmit = async (e: React.FormEvent) => {
   setSubmitting(true);
 
   try {
-    // console.log(' from frontend--', form)
+    let photo = null;
+    let photoPublicId = null;
+
+    if (imageFile) {
+      // Direct client-side signed upload to Cloudinary
+      const uploadRes = await uploadFileToCloudinary(imageFile, "teachers");
+      photo = uploadRes.secure_url;
+      photoPublicId = uploadRes.public_id;
+    }
+
     const res = await addTeacher({
       teacherName: form.teacherName.trim(),
       gender: form.gender || null,
@@ -295,7 +305,8 @@ const handleSubmit = async (e: React.FormEvent) => {
       subjectsTeaches: form.subjectsTeaches,
       post: form.post,
       experience: form.experience ? Number(form.experience) : null,
-      image: imageFile || undefined,
+      photo,
+      photoPublicId,
     });
 
     if (res.success && res.teacher) {
@@ -304,9 +315,9 @@ const handleSubmit = async (e: React.FormEvent) => {
     } else {
       setSubmitError(res.message || "Failed to add teacher");
     }
-  } catch (err) {
+  } catch (err: any) {
     console.error("[ADD_TEACHER_MODAL_ERROR]", err);
-    setSubmitError("Failed to add teacher. Please try again.");
+    setSubmitError(err.message || "Failed to add teacher. Please try again.");
   } finally {
     setSubmitting(false);
   }
@@ -420,7 +431,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                         {imageFile ? imageFile.name : "Click to upload photo"}
                       </p>
                       <p className="text-xs text-gray-400 mt-0.5">
-                        PNG, JPG, WebP · Max 5 MB
+                        PNG, JPG, WebP · Max 15 MB
                       </p>
                     </button>
                     <FieldError msg={errors.photo} />

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { getTeacherById, updateTeacher } from "@/app/actions/teacher";
+import { uploadFileToCloudinary } from "@/lib/upload";
 import { InferSelectModel } from "drizzle-orm";
 import { teachersTable } from "@/lib/db/schema";
 import {
@@ -180,6 +181,7 @@ export default function TeacherDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [photo, setPhoto] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [toast, setToast] = useState<ToastState>(null);
 
 
@@ -214,19 +216,34 @@ export default function TeacherDetailsPage() {
     if (!form || !teacher) return;
     setSaving(true);
     try {
+      let finalPhoto = photo;
+      let finalPhotoPublicId = teacher.photoPublicId;
+
+      if (imageFile) {
+        // Direct client-side signed upload to Cloudinary
+        const uploadRes = await uploadFileToCloudinary(imageFile, "teachers");
+        finalPhoto = uploadRes.secure_url;
+        finalPhotoPublicId = uploadRes.public_id;
+      }
+
       const res = await updateTeacher(teacher.id, {
         ...form,
         experience: form.experience ? Number(form.experience) : null,
-        photo,
+        photo: finalPhoto,
+        photoPublicId: finalPhotoPublicId,
       });
+
       if (res.success && res.teacher) {
         setTeacher(res.teacher);
+        setForm(toFormState(res.teacher));
+        setPhoto(res.teacher.photo ?? "");
+        setImageFile(null); // Reset local file state
         setToast({ type: "success", msg: "Changes saved successfully" });
       } else {
         setToast({ type: "error", msg: res.error ?? "Update failed" });
       }
-    } catch {
-      setToast({ type: "error", msg: "An unexpected error occurred" });
+    } catch (err: any) {
+      setToast({ type: "error", msg: err.message || "An unexpected error occurred" });
     } finally {
       setSaving(false);
     }
@@ -312,7 +329,14 @@ export default function TeacherDetailsPage() {
                   hidden
                   onChange={(e) => {
                     const file = e.target.files?.[0];
-                    if (file) setPhoto(URL.createObjectURL(file));
+                    if (file) {
+                      if (file.size > 15 * 1024 * 1024) {
+                        setToast({ type: "error", msg: "Image must be less than 15 MB" });
+                        return;
+                      }
+                      setImageFile(file);
+                      setPhoto(URL.createObjectURL(file));
+                    }
                   }}
                 />
               </div>
